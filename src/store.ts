@@ -78,14 +78,7 @@ export async function savePairs(data: Pair[]) { return await saveToSupabase('pai
 export async function saveBreeding(data: BreedingRecord[]) { return await saveToSupabase('breeding', data); }
 export async function saveHealth(data: HealthRecord[]) { return await saveToSupabase('health', data); }
 export async function saveFinance(data: FinancialRecord[]) { return await saveToSupabase('finance', data); }
-export async function saveAlerts(data: Alert[]) { return await saveToSupabase('alerts', data); }
-
-export async function saveBirds( Bird[]) { return await saveToSupabase('birds', data); }
-export async function savePairs( Pair[]) { return await saveToSupabase('pairs', data); }
-export async function saveBreeding( BreedingRecord[]) { return await saveToSupabase('breeding', data); }
-export async function saveHealth( HealthRecord[]) { return await saveToSupabase('health', data); }
-export async function saveFinance( FinancialRecord[]) { return await saveToSupabase('finance', data); }
-export async function saveAlerts( Alert[]) { return await saveToSupabase('alerts', data); }
+export async function saveAlerts(data: Alert[]) { return await saveToSupabase('alerts', data); } }
 
 // ================= الدوال المساعدة (ثابتة) =================
 export function generateId(): string { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
