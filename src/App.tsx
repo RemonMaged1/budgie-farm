@@ -37,33 +37,51 @@ function App() {
   const [finance, setFinance] = useState<FinancialRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-// Load data on mount (Async for Supabase)
-useEffect(() => {
-  let isMounted = true; // ← لازم تعلن المتغير هنا
+  // ✅ Load data on mount (Async for Supabase)
+  useEffect(() => {
+    let isMounted = true;
 
-  const loadData = async () => {
-    try {
-      const [b, p, br, h, f, a] = await Promise.all([
-        loadBirds(), loadPairs(), loadBreeding(), 
-        loadHealth(), loadFinance(), loadAlerts()
-      ]);
-      
-      if (isMounted) {
-        setBirds(b); setPairs(p); setBreeding(br);
-        setHealth(h); setFinance(f); setAlerts(a);
+    const loadData = async () => {
+      try {
+        const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
+          loadBirds(),
+          loadPairs(),
+          loadBreeding(),
+          loadHealth(),
+          loadFinance(),
+          loadAlerts(),
+        ]);
+
+        if (isMounted) {
+          setBirds(loadedBirds);
+          setPairs(loadedPairs);
+          setBreeding(loadedBreeding);
+          setHealth(loadedHealth);
+          setFinance(loadedFinance);
+          setAlerts(loadedAlerts);
+        }
+      } catch (error) {
+        console.error('❌ فشل تحميل البيانات من Supabase:', error);
+        if (isMounted) {
+          // عرض بيانات فاضية لو فشل التحميل عشان الموقع يشتغل
+          setBirds([]); setPairs([]); setBreeding([]);
+          setHealth([]); setFinance([]); setAlerts([]);
+        }
+      } finally {
+        // ✅ أهم سطر: نغلق التحميل دائماً
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("فشل تحميل البيانات:", error);
-    }
-  };
-  
-  loadData()
-}, []);
-    
+    };
+
+    loadData();
+
+    // Cleanup function
     return () => { isMounted = false; };
   }, []);
 
-  // Save handlers (Async)
+  // ✅ Save handlers (Async for Supabase)
   const updateBirds = useCallback(async (data: Bird[]) => {
     setBirds(data);
     await saveBirds(data);
@@ -94,7 +112,7 @@ useEffect(() => {
     await saveAlerts(data);
   }, []);
 
-  // Generate automatic alerts (بدون async في الدالة الداخلية)
+  // ✅ Generate automatic alerts (بدون async في الدالة الداخلية)
   useEffect(() => {
     const generateAlerts = () => {
       const today = new Date().toISOString().split('T')[0];
@@ -195,7 +213,7 @@ useEffect(() => {
     }
   };
 
-  // شاشة التحميل
+  // ✅ شاشة التحميل (تظهر فقط أثناء جلب البيانات من السحابة)
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
