@@ -38,44 +38,31 @@ function App() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   // Load data on mount (Async) - مع إصلاح مشكلة loading
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      try {
-        // نضع مهلة زمنية 10 ثواني عشان الموقع ميفضلش معلق
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
-        );
+  // Load data on mount
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
+        loadBirds(),
+        loadPairs(),
+        loadBreeding(),
+        loadHealth(),
+        loadFinance(),
+        loadAlerts(),
+      ]);
 
-        const dataPromise = Promise.all([
-          loadBirds(), loadPairs(), loadBreeding(), 
-          loadHealth(), loadFinance(), loadAlerts()
-        ]);
-
-        // ننتظر إما البيانات أو انتهاء المهلة
-        const [b, p, br, h, f, a] = await Promise.race([dataPromise, timeoutPromise]) as [Bird[], Pair[], BreedingRecord[], HealthRecord[], FinancialRecord[], Alert[]];
-        
-        if (isMounted) {
-          setBirds(b); setPairs(p); setBreeding(br);
-          setHealth(h); setFinance(f); setAlerts(a);
-        }
-      } catch (error) {
-        console.error("❌ فشل تحميل البيانات:", error);
-        // حتى لو فشل، نعرض صفحات فاضية عشان الموقع يشتغل
-        if (isMounted) {
-          setBirds([]); setPairs([]); setBreeding([]);
-          setHealth([]); setFinance([]); setAlerts([]);
-        }
-      } finally {
-        // ✅ أهم سطر: نغلق التحميل دائماً سواء نجح أو فشل
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    loadData();
+      setBirds(loadedBirds);
+      setPairs(loadedPairs);
+      setBreeding(loadedBreeding);
+      setHealth(loadedHealth);
+      setFinance(loadedFinance);
+      setAlerts(loadedAlerts);
+    } catch (error) {
+      console.error("فشل تحميل البيانات من Supabase:", error);
+    }
+  };
+  loadData();
+}, []);
     
     return () => { isMounted = false; };
   }, []);
