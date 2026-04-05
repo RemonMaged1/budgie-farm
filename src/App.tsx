@@ -37,31 +37,27 @@ function App() {
   const [finance, setFinance] = useState<FinancialRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-  // Load data on mount (Async) - مع إصلاح مشكلة loading
-  // Load data on mount
+// Load data on mount (Async for Supabase)
 useEffect(() => {
+  let isMounted = true; // ← لازم تعلن المتغير هنا
+
   const loadData = async () => {
     try {
-      const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
-        loadBirds(),
-        loadPairs(),
-        loadBreeding(),
-        loadHealth(),
-        loadFinance(),
-        loadAlerts(),
+      const [b, p, br, h, f, a] = await Promise.all([
+        loadBirds(), loadPairs(), loadBreeding(), 
+        loadHealth(), loadFinance(), loadAlerts()
       ]);
-
-      setBirds(loadedBirds);
-      setPairs(loadedPairs);
-      setBreeding(loadedBreeding);
-      setHealth(loadedHealth);
-      setFinance(loadedFinance);
-      setAlerts(loadedAlerts);
+      
+      if (isMounted) {
+        setBirds(b); setPairs(p); setBreeding(br);
+        setHealth(h); setFinance(f); setAlerts(a);
+      }
     } catch (error) {
-      console.error("فشل تحميل البيانات من Supabase:", error);
+      console.error("فشل تحميل البيانات:", error);
     }
   };
-  loadData();
+  
+  loadData()
 }, []);
     
     return () => { isMounted = false; };
