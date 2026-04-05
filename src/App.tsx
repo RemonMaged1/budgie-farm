@@ -37,21 +37,48 @@ function App() {
   const [finance, setFinance] = useState<FinancialRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-  // Load data on mount (Async)
+// Load data on mount (Async) - مع إصلاح مشكلة loading
 useEffect(() => {
+  let isMounted = true; // لمنع تحديث الحالة بعد فك المكون
+  
   const loadData = async () => {
     try {
-      const [b, p, br, h, f, a] = await Promise.all([
+      // نضع مهلة زمنية 10 ثواني عشان الموقع ميفضلش معلق
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
+      );
+
+      const dataPromise = Promise.all([
         loadBirds(), loadPairs(), loadBreeding(), 
         loadHealth(), loadFinance(), loadAlerts()
       ]);
-      setBirds(b); setPairs(p); setBreeding(br);
-      setHealth(h); setFinance(f); setAlerts(a);
+
+      // ننتظر إما البيانات أو انتهاء المهلة
+      const [b, p, br, h, f, a] = await Promise.race([dataPromise, timeoutPromise]) as [Bird[], Pair[], BreedingRecord[], HealthRecord[], FinancialRecord[], Alert[]];
+      
+      if (isMounted) {
+        setBirds(b); setPairs(p); setBreeding(br);
+        setHealth(h); setFinance(f); setAlerts(a);
+      }
     } catch (error) {
-      console.error("فشل تحميل البيانات:", error);
+      console.error("❌ فشل تحميل البيانات:", error);
+      // حتى لو فشل، نعرض صفحات فاضية عشان الموقع يشتغل
+      if (isMounted) {
+        setBirds([]); setPairs([]); setBreeding([]);
+        setHealth([]); setFinance([]); setAlerts([]);
+        alert("⚠️ لم نتمكن من جلب البيانات. تأكد من اتصال الإنترنت وإعدادات JSONBin.");
+      }
+    } finally {
+      // ✅ أهم سطر: نغلق التحميل دائماً سواء نجح أو فشل
+      if (isMounted) {
+        setLoading(false);
+      }
     }
   };
+  
   loadData();
+  
+  return () => { isMounted = false; }; // تنظيف عند الخروج
 }, []);
 
 // Save handlers (Async)
