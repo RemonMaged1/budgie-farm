@@ -17,6 +17,7 @@ import BreedingPage from './components/BreedingPage';
 import FamilyTree from './components/FamilyTree';
 import HealthPage from './components/HealthPage';
 import FinancePage from './components/FinancePage';
+import BreedingCalendar from './components/BreedingCalendar';
 import AlertsPage from './components/AlertsPage';
 
 const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
@@ -28,6 +29,7 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
   { page: 'health', icon: '🏥', label: 'السجل الصحي' },
   { page: 'finance', icon: '💰', label: 'المالية' },
   { page: 'alerts', icon: '🔔', label: 'التنبيهات' },
+  { page: 'calendar', icon: '📅', label: 'التقويم' },
 ];
 
 function App() {
@@ -233,6 +235,8 @@ function App() {
         return <AlertsPage alerts={alerts} onUpdate={updateAlerts} onDelete={handleDeleteAlert} />;
       default:
         return <Dashboard birds={birds} pairs={pairs} breeding={breeding} finance={finance} alerts={alerts} onNavigate={navigate} />;
+      case 'calendar':
+        return <BreedingCalendar birds={birds} pairs={pairs} breeding={breeding} />;
     }
   };
 
