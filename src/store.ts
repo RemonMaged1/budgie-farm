@@ -16,26 +16,30 @@ interface FarmData {
 }
 
 // دالة لجلب البيانات من النت
-async function fetchData(): Promise<FarmData> {
+async function fetchData(): Promise<AllData> {
   try {
     const res = await fetch(BASE_URL, {
+      method: 'GET',
       headers: { 
-        'X-Access-Key': API_KEY,
-        'X-Bin-Meta': 'false'
-      }
+        'X-Access-Key': API_KEY,  // ⚠️ ده الاسم الصح للهيدر
+        'X-Bin-Meta': 'false',
+        'Accept': 'application/json'
+      },
+      mode: 'cors'
     });
-    if (!res.ok) throw new Error('Failed to fetch');
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        console.error('❌ خطأ 401: المفتاح غير صحيح أو غير مرسل');
+      }
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const json = await res.json();
-    return json.record || { 
-      birds: [], pairs: [], breeding: [], 
-      health: [], finance: [], alerts: [] 
-    };
+    return json.record || { birds: [], pairs: [], breeding: [], health: [], finance: [], alerts: [] };
   } catch (error) {
-    console.error('Error fetching data:', error);
-    return { 
-      birds: [], pairs: [], breeding: [], 
-      health: [], finance: [], alerts: [] 
-    };
+    console.error('❌ فشل جلب البيانات:', error);
+    return { birds: [], pairs: [], breeding: [], health: [], finance: [], alerts: [] };
   }
 }
 
