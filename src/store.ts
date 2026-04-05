@@ -6,14 +6,13 @@ import { v4 as uuidv4 } from 'uuid'; // ← أ
 const SUPABASE_URL = 'https://kudvgmpdjuomrrhsisxu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_iqg1X1A_71jEUf9ZbPxD-Q_RRosm5RF';
 
-
 if (!SUPABASE_URL.includes('supabase.co')) {
-  console.error('❌ خطأ: لم يتم إدخال رابط Supabase الصحيح');
+  console.error('❌ خطأ: لم يتم إدخال رابط Supabase الصحيح في store.ts');
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ================= دوال التحويل =================
+// ================= دوال التحويل (عشان الأسماء تتطابق) =================
 function toCamelCase(obj: any) {
   if (!obj || typeof obj !== 'object') return obj;
   const result: any = {};
@@ -34,54 +33,63 @@ function toSnakeCase(obj: any) {
   return result;
 }
 
-// ================= دوال التحميل =================
+// ================= دوال التحميل (من النت) =================
 export async function loadBirds(): Promise<Bird[]> {
   const { data } = await supabase.from('birds').select('*').order('added_date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
+
 export async function loadPairs(): Promise<Pair[]> {
   const { data } = await supabase.from('pairs').select('*').order('pair_date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
+
 export async function loadBreeding(): Promise<BreedingRecord[]> {
   const { data } = await supabase.from('breeding').select('*').order('egg_date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
+
 export async function loadHealth(): Promise<HealthRecord[]> {
   const { data } = await supabase.from('health').select('*').order('date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
+
 export async function loadFinance(): Promise<FinancialRecord[]> {
   const { data } = await supabase.from('finance').select('*').order('date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
+
 export async function loadAlerts(): Promise<Alert[]> {
   const { data } = await supabase.from('alerts').select('*').order('date', { ascending: false });
   return data ? data.map(toCamelCase) : [];
 }
 
-// ================= دوال الحفظ =================
-async function saveToSupabase(table: string,  any[]): Promise<boolean> {
+// ================= دوال الحفظ (للنت) - تم التصحيح النهائي هنا =================
+
+// ⚠️ دالة الحفظ العامة: لاحظ (data: any[]) - اسم المتغير "data" موجود قبل النقطتين
+async function saveToSupabase(table: string, data: any[]): Promise<boolean> {
   const snakeData = data.map(toSnakeCase);
   const { error } = await supabase.from(table).upsert(snakeData, { onConflict: 'id' });
   
   if (error) {
     console.error(`❌ فشل حفظ ${table}:`, error.message);
-    alert(`⚠️ فشل الحفظ في ${table}!\n${error.message}`);
+    alert(`⚠️ فشل حفظ البيانات في ${table}!\nالسبب: ${error.message}`);
     return false;
   }
   console.log(`✅ تم حفظ ${table} بنجاح`);
   return true;
 }
 
-export async function saveBirds( Bird[]): Promise<void> { await saveToSupabase('birds', data); }
-export async function savePairs( Pair[]): Promise<void> { await saveToSupabase('pairs', data); }
-export async function saveBreeding( BreedingRecord[]): Promise<void> { await saveToSupabase('breeding', data); }
-export async function saveHealth( HealthRecord[]): Promise<void> { await saveToSupabase('health', data); }
-export async function saveFinance( FinancialRecord[]): Promise<void> { await saveToSupabase('finance', data); }
-export async function saveAlerts( Alert[]): Promise<void> { await saveToSupabase('alerts', data); }
+// ⚠️ دوال الحفظ الخاصة: لاحظ (data: Type[]) في كل دالة - اسم المتغير "data" موجود قبل النقطتين
+export async function saveBirds(data: Bird[]): Promise<void> { await saveToSupabase('birds', data); }
+export async function savePairs(data: Pair[]): Promise<void> { await saveToSupabase('pairs', data); }
+export async function saveBreeding(data: BreedingRecord[]): Promise<void> { await saveToSupabase('breeding', data); }
+export async function saveHealth(data: HealthRecord[]): Promise<void> { await saveToSupabase('health', data); }
+export async function saveFinance(data: FinancialRecord[]): Promise<void> { await saveToSupabase('finance', data); }
+export async function saveAlerts(data: Alert[]): Promise<void> { await saveToSupabase('alerts', data); }
 
-// ================= الدوال المساعدة =================
+// ================= الدوال المساعدة (ثابتة) =================
+
 // ✅ دالة توليد معرفات بصيغة UUID صحيحة لـ Supabase
 export function generateId(): string {
   return uuidv4();
@@ -92,13 +100,16 @@ export function addDays(dateStr: string, days: number): string {
   date.setDate(date.getDate() + days);
   return date.toISOString().split('T')[0];
 }
+
 export function daysDiff(date1: string, date2: string): number {
   return Math.ceil((new Date(date2).getTime() - new Date(date1).getTime()) / (1000 * 60 * 60 * 24));
 }
+
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
+
 export function getRelativeTime(dateStr: string): string {
   const now = new Date();
   const date = new Date(dateStr);
@@ -108,6 +119,7 @@ export function getRelativeTime(dateStr: string): string {
   if (diff === -1) return 'أمس';
   return diff > 0 ? `بعد ${diff} يوم` : `منذ ${Math.abs(diff)} يوم`;
 }
+
 export function getAncestors(birdId: string, birds: Bird[], depth: number = 5): Set<string> {
   const ancestors = new Set<string>();
   function traverse(id: string | undefined, cur: number) {
@@ -120,6 +132,7 @@ export function getAncestors(birdId: string, birds: Bird[], depth: number = 5): 
   traverse(birdId, depth);
   return ancestors;
 }
+
 export function checkInbreeding(maleId: string, femaleId: string, birds: Bird[]): { isRelated: boolean; commonAncestors: string[]; relationship: string } {
   const mA = getAncestors(maleId, birds);
   const fA = getAncestors(femaleId, birds);
