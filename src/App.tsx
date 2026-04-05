@@ -28,7 +28,7 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true); // حالة تحميل البيانات
+  const [loading, setLoading] = useState(true);
   
   const [birds, setBirds] = useState<Bird[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
@@ -37,84 +37,83 @@ function App() {
   const [finance, setFinance] = useState<FinancialRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-// Load data on mount (Async) - مع إصلاح مشكلة loading
-useEffect(() => {
-  let isMounted = true; // لمنع تحديث الحالة بعد فك المكون
-  
-  const loadData = async () => {
-    try {
-      // نضع مهلة زمنية 10 ثواني عشان الموقع ميفضلش معلق
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
-      );
-
-      const dataPromise = Promise.all([
-        loadBirds(), loadPairs(), loadBreeding(), 
-        loadHealth(), loadFinance(), loadAlerts()
-      ]);
-
-      // ننتظر إما البيانات أو انتهاء المهلة
-      const [b, p, br, h, f, a] = await Promise.race([dataPromise, timeoutPromise]) as [Bird[], Pair[], BreedingRecord[], HealthRecord[], FinancialRecord[], Alert[]];
-      
-      if (isMounted) {
-        setBirds(b); setPairs(p); setBreeding(br);
-        setHealth(h); setFinance(f); setAlerts(a);
-      }
-    } catch (error) {
-      console.error("❌ فشل تحميل البيانات:", error);
-      // حتى لو فشل، نعرض صفحات فاضية عشان الموقع يشتغل
-      if (isMounted) {
-        setBirds([]); setPairs([]); setBreeding([]);
-        setHealth([]); setFinance([]); setAlerts([]);
-        alert("⚠️ لم نتمكن من جلب البيانات. تأكد من اتصال الإنترنت وإعدادات JSONBin.");
-      }
-    } finally {
-      // ✅ أهم سطر: نغلق التحميل دائماً سواء نجح أو فشل
-      if (isMounted) {
-        setLoading(false);
-      }
-    }
-  };
-  
-  loadData();
-  
-  return () => { isMounted = false; }; // تنظيف عند الخروج
-}, []);
-
-// Save handlers (Async)
-// Save handlers (Async) - تم إصلاح الخطأ بإضافة "data:" قبل كل نوع
-const updateBirds = useCallback(async (data: Bird[]) => {
-  setBirds(data);
-  await saveBirds(data);
-}, []);
-
-const updatePairs = useCallback(async (data: Pair[]) => {
-  setPairs(data);
-  await savePairs(data);
-}, []);
-
-const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
-  setBreeding(data);
-  await saveBreeding(data);
-}, []);
-
-const updateHealth = useCallback(async (data: HealthRecord[]) => {
-  setHealth(data);
-  await saveHealth(data);
-}, []);
-
-const updateFinance = useCallback(async (data: FinancialRecord[]) => {
-  setFinance(data);
-  await saveFinance(data);
-}, []);
-
-const updateAlerts = useCallback(async (data: Alert[]) => {
-  setAlerts(data);
-  await saveAlerts(data);
-}, []);
-  // Generate automatic alerts
+  // Load data on mount (Async) - مع إصلاح مشكلة loading
   useEffect(() => {
-    const generateAlerts = async () => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        // نضع مهلة زمنية 10 ثواني عشان الموقع ميفضلش معلق
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('انتهت مهلة الاتصال')), 10000)
+        );
+
+        const dataPromise = Promise.all([
+          loadBirds(), loadPairs(), loadBreeding(), 
+          loadHealth(), loadFinance(), loadAlerts()
+        ]);
+
+        // ننتظر إما البيانات أو انتهاء المهلة
+        const [b, p, br, h, f, a] = await Promise.race([dataPromise, timeoutPromise]) as [Bird[], Pair[], BreedingRecord[], HealthRecord[], FinancialRecord[], Alert[]];
+        
+        if (isMounted) {
+          setBirds(b); setPairs(p); setBreeding(br);
+          setHealth(h); setFinance(f); setAlerts(a);
+        }
+      } catch (error) {
+        console.error("❌ فشل تحميل البيانات:", error);
+        // حتى لو فشل، نعرض صفحات فاضية عشان الموقع يشتغل
+        if (isMounted) {
+          setBirds([]); setPairs([]); setBreeding([]);
+          setHealth([]); setFinance([]); setAlerts([]);
+        }
+      } finally {
+        // ✅ أهم سطر: نغلق التحميل دائماً سواء نجح أو فشل
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadData();
+    
+    return () => { isMounted = false; };
+  }, []);
+
+  // Save handlers (Async)
+  const updateBirds = useCallback(async (data: Bird[]) => {
+    setBirds(data);
+    await saveBirds(data);
+  }, []);
+
+  const updatePairs = useCallback(async (data: Pair[]) => {
+    setPairs(data);
+    await savePairs(data);
+  }, []);
+
+  const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
+    setBreeding(data);
+    await saveBreeding(data);
+  }, []);
+
+  const updateHealth = useCallback(async (data: HealthRecord[]) => {
+    setHealth(data);
+    await saveHealth(data);
+  }, []);
+
+  const updateFinance = useCallback(async (data: FinancialRecord[]) => {
+    setFinance(data);
+    await saveFinance(data);
+  }, []);
+
+  const updateAlerts = useCallback(async (data: Alert[]) => {
+    setAlerts(data);
+    await saveAlerts(data);
+  }, []);
+
+  // Generate automatic alerts (بدون async في الدالة الداخلية)
+  useEffect(() => {
+    const generateAlerts = () => {
       const today = new Date().toISOString().split('T')[0];
       const newAlerts: Alert[] = [];
 
@@ -176,11 +175,12 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
       if (newAlerts.length > 0) {
         const updated = [...alerts, ...newAlerts];
         setAlerts(updated);
-        await saveAlerts(updated);
+        // نستخدم .catch() بدلاً من await لأن الدالة مش async
+        saveAlerts(updated).catch(err => console.error('فشل حفظ التنبيهات:', err));
       }
     };
     generateAlerts();
-  }, [breeding, pairs, birds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [breeding, pairs, birds, alerts]);
 
   const navigate = (page: string) => {
     setCurrentPage(page as Page);
@@ -212,6 +212,7 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
     }
   };
 
+  // شاشة التحميل
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">

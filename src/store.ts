@@ -1,6 +1,6 @@
 import { Bird, Pair, BreedingRecord, HealthRecord, FinancialRecord, Alert } from './types';
 
-// ⚠️ استبدل القيم دي ببياناتك من JSONBin.io
+// ⚠️ غيّر القيم دي ببياناتك من JSONBin.io
 const API_KEY = '$2a$10$1YWhVj4Umu/JA2q86VXLIu0C.RCi8fSx0VN20gnHSUsN.YNO2ntge';
 const BIN_ID = '69d1cc52856a682189fe41e2';
 const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -16,8 +16,7 @@ interface FarmData {
 }
 
 // دالة لجلب البيانات من النت
-// دالة لجلب البيانات من النت
-async function fetchData(): Promise<FarmData> {  // ← تم التصحيح هنا
+async function fetchData(): Promise<FarmData> {
   try {
     const res = await fetch(BASE_URL, {
       method: 'GET',
@@ -31,20 +30,40 @@ async function fetchData(): Promise<FarmData> {  // ← تم التصحيح هن
     
     if (!res.ok) {
       if (res.status === 401) {
-        console.error('❌ خطأ 401: المفتاح غير صحيح أو غير مرسل');
+        console.error('❌ خطأ 401: المفتاح غير صحيح');
       }
       throw new Error(`HTTP error! status: ${res.status}`);
     }
     
     const json = await res.json();
-    return json.record || { birds: [], pairs: [], breeding: [], health: [], finance: [], alerts: [] };
+    return json.record || { 
+      birds: [], pairs: [], breeding: [], 
+      health: [], finance: [], alerts: [] 
+    };
   } catch (error) {
     console.error('❌ فشل جلب البيانات:', error);
-    return { birds: [], pairs: [], breeding: [], health: [], finance: [], alerts: [] };
+    return { 
+      birds: [], pairs: [], breeding: [], 
+      health: [], finance: [], alerts: [] 
+    };
   }
 }
 
-// دوال التحميل (كلها بتجيب من نفس المصدر)
+// دالة لحفظ البيانات على النت
+async function saveData(data: FarmData): Promise<void> {
+  const res = await fetch(BASE_URL, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Access-Key': API_KEY
+    },
+    body: JSON.stringify(data),
+    mode: 'cors'
+  });
+  if (!res.ok) throw new Error('فشل في حفظ البيانات');
+}
+
+// ================= دوال التحميل (أصبحت Async) =================
 export async function loadBirds(): Promise<Bird[]> { 
   const d = await fetchData(); 
   return d.birds; 
@@ -70,42 +89,33 @@ export async function loadAlerts(): Promise<Alert[]> {
   return d.alerts; 
 }
 
-// دوال الحفظ (بتحمّل كل البيانات وتعدّل الجزء المطلوب)
-// ================= دوال الحفظ (تم إصلاح الخطأ) =================
-// ملاحظة: بنجيب كل البيانات، بنعدل الجزء المطلوب، ونعيد حفظ الكل
+// ================= دوال الحفظ (أصبحت Async) =================
 export async function saveBirds(data: Bird[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, birds: data }); 
 }
-
 export async function savePairs(data: Pair[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, pairs: data }); 
 }
-
 export async function saveBreeding(data: BreedingRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, breeding: data }); 
 }
-
 export async function saveHealth(data: HealthRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, health: data }); 
 }
-
 export async function saveFinance(data: FinancialRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, finance: data }); 
 }
-
 export async function saveAlerts(data: Alert[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, alerts: data }); 
 }
 
-// =====================================================
-// دوال المساعدة (نفسها زي ما هي - متلمسهاش)
-// =====================================================
+// ================= الدوال المساعدة (نفسها زي ما هي) =================
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
