@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // ⚠️ حط بيانات مشروعك هنا من لوحة تحكم Supabase
 const SUPABASE_URL = 'https://kudvgmpdjuomrrhsisxu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1ZHZnbXBkanVvbXJyaHNpc3h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMDc1MTIsImV4cCI6MjA5MDg4MzUxMn0.-xRLvCQg_ypEln4zJtR4cIL_vFpSPZNpvhPcpWJryTA';
+const SUPABASE_ANON_KEY = 'sb_publishable_iqg1X1A_71jEUf9ZbPxD-Q_RRosm5RF';
 
 const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
