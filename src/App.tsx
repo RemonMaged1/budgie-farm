@@ -55,32 +55,33 @@ useEffect(() => {
 }, []);
 
 // Save handlers (Async)
-const updateBirds = useCallback(async ( Bird[]) => {
+// Save handlers (Async) - تم إصلاح الخطأ بإضافة "data:" قبل كل نوع
+const updateBirds = useCallback(async (data: Bird[]) => {
   setBirds(data);
   await saveBirds(data);
 }, []);
 
-const updatePairs = useCallback(async ( Pair[]) => {
+const updatePairs = useCallback(async (data: Pair[]) => {
   setPairs(data);
   await savePairs(data);
 }, []);
 
-const updateBreeding = useCallback(async ( BreedingRecord[]) => {
+const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
   setBreeding(data);
   await saveBreeding(data);
 }, []);
 
-const updateHealth = useCallback(async ( HealthRecord[]) => {
+const updateHealth = useCallback(async (data: HealthRecord[]) => {
   setHealth(data);
   await saveHealth(data);
 }, []);
 
-const updateFinance = useCallback(async ( FinancialRecord[]) => {
+const updateFinance = useCallback(async (data: FinancialRecord[]) => {
   setFinance(data);
   await saveFinance(data);
 }, []);
 
-const updateAlerts = useCallback(async ( Alert[]) => {
+const updateAlerts = useCallback(async (data: Alert[]) => {
   setAlerts(data);
   await saveAlerts(data);
 }, []);
