@@ -7,6 +7,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    viteSingleFile() // هذا السطر ضروري إذا كنت تريد دمج كل شيء في ملف واحد
+    viteSingleFile()
   ],
 })
