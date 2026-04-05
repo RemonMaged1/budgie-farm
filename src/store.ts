@@ -38,12 +38,13 @@ async function saveCollection<T extends { id: string }>(colName: string, data: T
   }
 }
 
-export async function saveBirds( Bird[]): Promise<void> { await saveCollection(COLLECTIONS.birds, data); }
-export async function savePairs( Pair[]): Promise<void> { await saveCollection(COLLECTIONS.pairs, data); }
-export async function saveBreeding( BreedingRecord[]): Promise<void> { await saveCollection(COLLECTIONS.breeding, data); }
-export async function saveHealth( HealthRecord[]): Promise<void> { await saveCollection(COLLECTIONS.health, data); }
-export async function saveFinance( FinancialRecord[]): Promise<void> { await saveCollection(COLLECTIONS.finance, data); }
-export async function saveAlerts( Alert[]): Promise<void> { await saveCollection(COLLECTIONS.alerts, data); }
+// استبدل دوال الحفظ القديمة بالدي بالظبط:
+export async function saveBirds(data: Bird[]): Promise<void> { await saveCollection(COLLECTIONS.birds, data); }
+export async function savePairs(data: Pair[]): Promise<void> { await saveCollection(COLLECTIONS.pairs, data); }
+export async function saveBreeding(data: BreedingRecord[]): Promise<void> { await saveCollection(COLLECTIONS.breeding, data); }
+export async function saveHealth(data: HealthRecord[]): Promise<void> { await saveCollection(COLLECTIONS.health, data); }
+export async function saveFinance(data: FinancialRecord[]): Promise<void> { await saveCollection(COLLECTIONS.finance, data); }
+export async function saveAlerts(data: Alert[]): Promise<void> { await saveCollection(COLLECTIONS.alerts, data); }
 
 // باقي الدوال المساعدة (نفسها زي ما هي)
 export function generateId(): string {
