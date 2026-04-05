@@ -7,12 +7,13 @@ interface Props {
   pairs: Pair[];
   breeding: BreedingRecord[];
   onUpdate: (breeding: BreedingRecord[]) => void;
+  onDelete?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
 const INCUBATION_DAYS = 18;
 const WEAN_DAYS = 35;
 
-export default function BreedingPage({ birds, pairs, breeding, onUpdate }: Props) {
+export default function BreedingPage({ birds, pairs, breeding, onUpdate, onDelete }: Props) { // ✅ تم استقبال onDelete
   const [showForm, setShowForm] = useState(false);
   const [selectedPair, setSelectedPair] = useState('');
   const [eggDate, setEggDate] = useState(new Date().toISOString().split('T')[0]);
@@ -63,8 +64,10 @@ export default function BreedingPage({ birds, pairs, breeding, onUpdate }: Props
     onUpdate(updated);
   };
 
-  const deleteRecord = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deleteRecord = async (id: string) => {
+    if (confirm('هل أنت متأكد من حذف هذا السجل؟ سيتم حذفه نهائياً من السحابة.')) {
+      if (onDelete) await onDelete(id);
       onUpdate(breeding.filter(b => b.id !== id));
     }
   };

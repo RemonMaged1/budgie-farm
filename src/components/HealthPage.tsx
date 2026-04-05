@@ -6,9 +6,10 @@ interface Props {
   birds: Bird[];
   health: HealthRecord[];
   onUpdate: (health: HealthRecord[]) => void;
+  onDelete?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
-export default function HealthPage({ birds, health, onUpdate }: Props) {
+export default function HealthPage({ birds, health, onUpdate, onDelete }: Props) { // ✅ تم استقبال onDelete
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     birdId: '',
@@ -44,8 +45,10 @@ export default function HealthPage({ birds, health, onUpdate }: Props) {
     });
   };
 
-  const deleteRecord = (id: string) => {
-    if (confirm('هل أنت متأكد؟')) {
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deleteRecord = async (id: string) => {
+    if (confirm('هل أنت متأكد؟ سيتم حذف هذا السجل نهائياً من السحابة.')) {
+      if (onDelete) await onDelete(id);
       onUpdate(health.filter(h => h.id !== id));
     }
   };

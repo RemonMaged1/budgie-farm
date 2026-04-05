@@ -4,9 +4,10 @@ import { checkInbreeding } from '../store';
 
 interface Props {
   birds: Bird[];
+  onDelete?: (id: string) => void; // ➕ تم الإضافة بدقة
 }
 
-export default function FamilyTree({ birds }: Props) {
+export default function FamilyTree({ birds, onDelete }: Props) { // ➕ تم استقبال الخاصية
   const [selectedBird, setSelectedBird] = useState('');
   const [checkMale, setCheckMale] = useState('');
   const [checkFemale, setCheckFemale] = useState('');
@@ -29,6 +30,14 @@ export default function FamilyTree({ birds }: Props) {
   };
 
   const inbreedingResult = checkMale && checkFemale ? checkInbreeding(checkMale, checkFemale, birds) : null;
+
+  // ➕ دالة الحذف الجديدة (مضافة بدقة دون المساس بأي منطق موجود)
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الطائر؟ سيتم حذفه نهائياً من السحابة.')) return;
+    if (onDelete) await onDelete(id);
+    // لو الطائر المحذوف هو اللي متعرض دلوقتي، نمسح الاختيار
+    if (selectedBird === id) setSelectedBird('');
+  };
 
   const renderAncestorTree = (birdId: string | undefined, depth: number, label: string): React.ReactNode => {
     if (depth > 3) return null;
@@ -179,17 +188,28 @@ export default function FamilyTree({ birds }: Props) {
 
         {bird && (
           <div className="animate-fadeIn space-y-6">
-            {/* Bird Info Card */}
-            <div className={`rounded-xl p-4 border ${bird.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' : 'bg-pink-500/10 border-pink-500/30'}`}>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{bird.gender === 'male' ? '🐦' : '🐤'}</span>
-                <div>
-                  <h3 className={`text-xl font-bold ${bird.gender === 'male' ? 'text-blue-400' : 'text-pink-400'}`}>
-                    {bird.name}
-                  </h3>
-                  <p className="text-slate-400 text-sm">{bird.color} | {bird.mutation || 'بدون طفرة'}</p>
-                  {bird.ringNumber && <p className="text-slate-500 text-xs">حلقة: #{bird.ringNumber}</p>}
+            {/* Bird Info Card - ➕ تمت إضافة زر الحذف هنا بدقة */}
+            <div className={`rounded-xl p-4 border relative ${bird.gender === 'male' ? 'bg-blue-500/10 border-blue-500/30' : 'bg-pink-500/10 border-pink-500/30'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl">{bird.gender === 'male' ? '🐦' : '🐤'}</span>
+                  <div>
+                    <h3 className={`text-xl font-bold ${bird.gender === 'male' ? 'text-blue-400' : 'text-pink-400'}`}>
+                      {bird.name}
+                    </h3>
+                    <p className="text-slate-400 text-sm">{bird.color} | {bird.mutation || 'بدون طفرة'}</p>
+                    {bird.ringNumber && <p className="text-slate-500 text-xs">حلقة: #{bird.ringNumber}</p>}
+                  </div>
                 </div>
+                {onDelete && (
+                  <button
+                    onClick={() => handleDelete(bird.id)}
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition"
+                    title="حذف الطائر"
+                  >
+                    🗑️
+                  </button>
+                )}
               </div>
             </div>
 
@@ -211,19 +231,28 @@ export default function FamilyTree({ birds }: Props) {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {getChildren(bird.id).map(child => (
-                    <button
+                    <div
                       key={child.id}
                       onClick={() => setSelectedBird(child.id)}
-                      className={`rounded-xl p-3 border text-center transition-all hover:scale-105 ${
+                      className={`relative rounded-xl p-3 border text-center cursor-pointer transition-all hover:scale-105 ${
                         child.gender === 'male' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-pink-500/10 border-pink-500/20'
                       }`}
                     >
+                      {/* ➕ زر الحذف المصغر (e.stopPropagation يمنع اختيار الطائر عند الضغط على الحذف) */}
+                      {onDelete && (
+                        <span
+                          onClick={(e) => { e.stopPropagation(); handleDelete(child.id); }}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-full w-5 h-5 flex items-center justify-center text-xs cursor-pointer border border-red-500/30"
+                        >
+                          ✕
+                        </span>
+                      )}
                       <span className="text-xl">{child.gender === 'male' ? '🐦' : '🐤'}</span>
                       <div className={`font-medium text-sm mt-1 ${child.gender === 'male' ? 'text-blue-400' : 'text-pink-400'}`}>
                         {child.name}
                       </div>
                       <div className="text-slate-500 text-xs">{child.color}</div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -237,19 +266,28 @@ export default function FamilyTree({ birds }: Props) {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {getSiblings(bird).map(sibling => (
-                    <button
+                    <div
                       key={sibling.id}
                       onClick={() => setSelectedBird(sibling.id)}
-                      className={`rounded-xl p-3 border text-center transition-all hover:scale-105 ${
+                      className={`relative rounded-xl p-3 border text-center cursor-pointer transition-all hover:scale-105 ${
                         sibling.gender === 'male' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-pink-500/10 border-pink-500/20'
                       }`}
                     >
+                      {/* ➕ زر الحذف المصغر */}
+                      {onDelete && (
+                        <span
+                          onClick={(e) => { e.stopPropagation(); handleDelete(sibling.id); }}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-full w-5 h-5 flex items-center justify-center text-xs cursor-pointer border border-red-500/30"
+                        >
+                          ✕
+                        </span>
+                      )}
                       <span className="text-xl">{sibling.gender === 'male' ? '🐦' : '🐤'}</span>
                       <div className={`font-medium text-sm mt-1 ${sibling.gender === 'male' ? 'text-blue-400' : 'text-pink-400'}`}>
                         {sibling.name}
                       </div>
                       <div className="text-slate-500 text-xs">{sibling.color}</div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}

@@ -5,11 +5,12 @@ import { generateId } from '../store';
 interface Props {
   birds: Bird[];
   onUpdate: (birds: Bird[]) => void;
+  onDelete?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
-const COLORS = ['أخضر', 'أزرق', 'أبيض', 'أصفر', 'رمادي', 'بنفسجي', 'أبيض وأزرق', 'لوتينو', 'ألبينو', 'سباينل', 'كوبالت', 'كريمينو', 'ريمبو', 'أوبالين', 'سيدلت', 'كلير وينج'];
+const COLORS = ['أخضر', 'أزرشق', 'أبيض', 'أصفر', 'رمادي', 'بنفسجي', 'أبيض وأزرق', 'لوتينو', 'ألبينو', 'سباينل', 'كوبالت', 'كريمينو', 'ريمبو', 'أوبالين', 'سيدلت', 'كلير وينج'];
 
-export default function BirdsPage({ birds, onUpdate }: Props) {
+export default function BirdsPage({ birds, onUpdate, onDelete }: Props) { // ✅ تم استقبال onDelete
   const [showForm, setShowForm] = useState(false);
   const [editingBird, setEditingBird] = useState<Bird | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,8 +71,10 @@ export default function BirdsPage({ birds, onUpdate }: Props) {
     resetForm();
   };
 
-  const deleteBird = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا الطائر؟')) {
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deleteBird = async (id: string) => {
+    if (confirm('هل أنت متأكد من حذف هذا الطائر؟ سيتم حذفه نهائياً من السحابة.')) {
+      if (onDelete) await onDelete(id);
       onUpdate(birds.filter(b => b.id !== id));
     }
   };

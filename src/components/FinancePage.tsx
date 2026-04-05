@@ -5,12 +5,13 @@ import { generateId, formatDate } from '../store';
 interface Props {
   finance: FinancialRecord[];
   onUpdate: (finance: FinancialRecord[]) => void;
+  onDelete?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
 const EXPENSE_CATEGORIES = ['أعلاف', 'أقفاص', 'أدوية', 'فيتامينات', 'أدوات', 'كهرباء', 'إيجار', 'نقل', 'أخرى'];
 const INCOME_CATEGORIES = ['بيع طيور', 'بيع فراخ', 'بيع بيض', 'بيع أعشاش', 'أخرى'];
 
-export default function FinancePage({ finance, onUpdate }: Props) {
+export default function FinancePage({ finance, onUpdate, onDelete }: Props) { // ✅ تم استقبال onDelete
   const [showForm, setShowForm] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterMonth, setFilterMonth] = useState('');
@@ -39,8 +40,10 @@ export default function FinancePage({ finance, onUpdate }: Props) {
     setForm({ type: 'expense', category: '', amount: '', date: new Date().toISOString().split('T')[0], description: '' });
   };
 
-  const deleteRecord = (id: string) => {
-    if (confirm('هل أنت متأكد؟')) {
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deleteRecord = async (id: string) => {
+    if (confirm('هل أنت متأكد؟ سيتم حذف هذا السجل نهائياً من السحابة.')) {
+      if (onDelete) await onDelete(id);
       onUpdate(finance.filter(f => f.id !== id));
     }
   };

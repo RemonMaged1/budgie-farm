@@ -6,87 +6,107 @@ import { v4 as uuidv4 } from 'uuid'; // ← أ
 const SUPABASE_URL = 'https://kudvgmpdjuomrrhsisxu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_iqg1X1A_71jEUf9ZbPxD-Q_RRosm5RF';
 
-if (!SUPABASE_URL.includes('supabase.co')) {
-  console.error('❌ خطأ: لم يتم إدخال رابط Supabase الصحيح في store.ts');
-}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ================= دوال التحويل (عشان الأسماء تتطابق) =================
-function toCamelCase(obj: any) {
+// ================= دوال التحويل بين camelCase و snake_case =================
+
+function toCamelCase(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
   const result: any = {};
-  for (let key in obj) {
-    const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+  for (const key of Object.keys(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
     result[camelKey] = toCamelCase(obj[key]);
   }
   return result;
 }
 
-function toSnakeCase(obj: any) {
+function toSnakeCase(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
   const result: any = {};
-  for (let key in obj) {
+  for (const key of Object.keys(obj)) {
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     result[snakeKey] = toSnakeCase(obj[key]);
   }
   return result;
 }
 
-// ================= دوال التحميل (من النت) =================
+// ================= دوال التحميل (من Supabase) =================
+
 export async function loadBirds(): Promise<Bird[]> {
   const { data } = await supabase.from('birds').select('*').order('added_date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
 export async function loadPairs(): Promise<Pair[]> {
   const { data } = await supabase.from('pairs').select('*').order('pair_date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
 export async function loadBreeding(): Promise<BreedingRecord[]> {
   const { data } = await supabase.from('breeding').select('*').order('egg_date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
 export async function loadHealth(): Promise<HealthRecord[]> {
   const { data } = await supabase.from('health').select('*').order('date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
 export async function loadFinance(): Promise<FinancialRecord[]> {
   const { data } = await supabase.from('finance').select('*').order('date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
 export async function loadAlerts(): Promise<Alert[]> {
   const { data } = await supabase.from('alerts').select('*').order('date', { ascending: false });
-  return data ? data.map(toCamelCase) : [];
+  return data ? data.map((item: any) => toCamelCase(item)) : [];
 }
 
-// ================= دوال الحفظ (للنت) - تم التصحيح النهائي هنا =================
+// ================= دوال الحفظ والحذف (لـ Supabase) =================
 
-// ⚠️ دالة الحفظ العامة: لاحظ (data: any[]) - اسم المتغير "data" موجود قبل النقطتين
+// دالة الحفظ العامة (Upsert: إضافة أو تحديث)
 async function saveToSupabase(table: string, data: any[]): Promise<boolean> {
-  const snakeData = data.map(toSnakeCase);
+  const snakeData = data.map((item: any) => toSnakeCase(item));
   const { error } = await supabase.from(table).upsert(snakeData, { onConflict: 'id' });
   
   if (error) {
     console.error(`❌ فشل حفظ ${table}:`, error.message);
-    alert(`⚠️ فشل حفظ البيانات في ${table}!\nالسبب: ${error.message}`);
+    alert(`⚠️ فشل حفظ البيانات في ${table}!\n${error.message}`);
     return false;
   }
-  console.log(`✅ تم حفظ ${table} بنجاح`);
   return true;
 }
 
-// ⚠️ دوال الحفظ الخاصة: لاحظ (data: Type[]) في كل دالة - اسم المتغير "data" موجود قبل النقطتين
+// دالة الحذف العامة (حذف نهائي من قاعدة البيانات)
+async function deleteFromSupabase(table: string, id: string): Promise<boolean> {
+  const { error } = await supabase.from(table).delete().eq('id', id);
+  
+  if (error) {
+    console.error(`❌ فشل حذف من ${table}:`, error.message);
+    alert(`⚠️ فشل الحذف من ${table}!\n${error.message}`);
+    return false;
+  }
+  return true;
+}
+
+// دوال الحفظ لكل جدول
 export async function saveBirds(data: Bird[]): Promise<void> { await saveToSupabase('birds', data); }
 export async function savePairs(data: Pair[]): Promise<void> { await saveToSupabase('pairs', data); }
 export async function saveBreeding(data: BreedingRecord[]): Promise<void> { await saveToSupabase('breeding', data); }
 export async function saveHealth(data: HealthRecord[]): Promise<void> { await saveToSupabase('health', data); }
 export async function saveFinance(data: FinancialRecord[]): Promise<void> { await saveToSupabase('finance', data); }
 export async function saveAlerts(data: Alert[]): Promise<void> { await saveToSupabase('alerts', data); }
+
+// دوال الحذف لكل جدول
+export async function deleteBird(id: string): Promise<void> { await deleteFromSupabase('birds', id); }
+export async function deletePair(id: string): Promise<void> { await deleteFromSupabase('pairs', id); }
+export async function deleteBreeding(id: string): Promise<void> { await deleteFromSupabase('breeding', id); }
+export async function deleteHealth(id: string): Promise<void> { await deleteFromSupabase('health', id); }
+export async function deleteFinance(id: string): Promise<void> { await deleteFromSupabase('finance', id); }
+export async function deleteAlert(id: string): Promise<void> { await deleteFromSupabase('alerts', id); }
 
 // ================= الدوال المساعدة (ثابتة) =================
 
@@ -102,12 +122,15 @@ export function addDays(dateStr: string, days: number): string {
 }
 
 export function daysDiff(date1: string, date2: string): number {
-  return Math.ceil((new Date(date2).getTime() - new Date(date1).getTime()) / (1000 * 60 * 60 * 24));
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 export function getRelativeTime(dateStr: string): string {
@@ -122,29 +145,33 @@ export function getRelativeTime(dateStr: string): string {
 
 export function getAncestors(birdId: string, birds: Bird[], depth: number = 5): Set<string> {
   const ancestors = new Set<string>();
-  function traverse(id: string | undefined, cur: number) {
-    if (!id || cur <= 0) return;
-    const b = birds.find(x => x.id === id);
-    if (!b) return;
-    if (b.fatherId) { ancestors.add(b.fatherId); traverse(b.fatherId, cur-1); }
-    if (b.motherId) { ancestors.add(b.motherId); traverse(b.motherId, cur-1); }
+  function traverse(id: string | undefined, currentDepth: number) {
+    if (!id || currentDepth <= 0) return;
+    const bird = birds.find(b => b.id === id);
+    if (!bird) return;
+    if (bird.fatherId) { ancestors.add(bird.fatherId); traverse(bird.fatherId, currentDepth - 1); }
+    if (bird.motherId) { ancestors.add(bird.motherId); traverse(bird.motherId, currentDepth - 1); }
   }
   traverse(birdId, depth);
   return ancestors;
 }
 
 export function checkInbreeding(maleId: string, femaleId: string, birds: Bird[]): { isRelated: boolean; commonAncestors: string[]; relationship: string } {
-  const mA = getAncestors(maleId, birds);
-  const fA = getAncestors(femaleId, birds);
-  const c: string[] = [];
-  mA.forEach(a => { if (fA.has(a)) c.push(a); });
-  const m = birds.find(b => b.id === maleId);
-  const f = birds.find(b => b.id === femaleId);
-  if (!m || !f) return { isRelated: false, commonAncestors: [], relationship: '' };
-  if (m.fatherId && m.fatherId === f.fatherId) return { isRelated: true, commonAncestors: c, relationship: 'أخوة (نفس الأب)' };
-  if (m.motherId && m.motherId === f.motherId) return { isRelated: true, commonAncestors: c, relationship: 'أخوة (نفس الأم)' };
-  if (m.fatherId === f.fatherId && m.motherId === f.motherId && m.fatherId && m.motherId) return { isRelated: true, commonAncestors: c, relationship: 'أخوة أشقاء' };
-  if (maleId === f.fatherId || maleId === f.motherId) return { isRelated: true, commonAncestors: c, relationship: 'أب/أم وابن/ابنة' };
-  if (femaleId === m.fatherId || femaleId === m.motherId) return { isRelated: true, commonAncestors: c, relationship: 'أب/أم وابن/ابنة' };
-  return c.length > 0 ? { isRelated: true, commonAncestors: c, relationship: `أقارب (${c.length} جد/جدة مشتركة)` } : { isRelated: false, commonAncestors: [], relationship: 'لا توجد قرابة' };
+  const maleAncestors = getAncestors(maleId, birds);
+  const femaleAncestors = getAncestors(femaleId, birds);
+  const commonAncestors: string[] = [];
+  maleAncestors.forEach(ancestor => { if (femaleAncestors.has(ancestor)) commonAncestors.push(ancestor); });
+  
+  const male = birds.find(b => b.id === maleId);
+  const female = birds.find(b => b.id === femaleId);
+  if (!male || !female) return { isRelated: false, commonAncestors: [], relationship: '' };
+  
+  if (male.fatherId && male.fatherId === female.fatherId) return { isRelated: true, commonAncestors, relationship: 'أخوة (نفس الأب)' };
+  if (male.motherId && male.motherId === female.motherId) return { isRelated: true, commonAncestors, relationship: 'أخوة (نفس الأم)' };
+  if (male.fatherId === female.fatherId && male.motherId === female.motherId && male.fatherId && male.motherId) return { isRelated: true, commonAncestors, relationship: 'أخوة أشقاء' };
+  if (maleId === female.fatherId || maleId === female.motherId) return { isRelated: true, commonAncestors, relationship: 'أب/أم وابن/ابنة' };
+  if (femaleId === male.fatherId || femaleId === male.motherId) return { isRelated: true, commonAncestors, relationship: 'أب/أم وابن/ابنة' };
+  
+  if (commonAncestors.length > 0) return { isRelated: true, commonAncestors, relationship: `أقارب (${commonAncestors.length} جد/جدة مشتركة)` };
+  return { isRelated: false, commonAncestors: [], relationship: 'لا توجد قرابة' };
 }

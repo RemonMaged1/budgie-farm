@@ -8,9 +8,10 @@ interface Props {
   finance: FinancialRecord[];
   alerts: Alert[];
   onNavigate: (page: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export default function Dashboard({ birds, pairs, breeding, finance, alerts, onNavigate }: Props) {
+export default function Dashboard({ birds, pairs, breeding, finance, alerts, onNavigate, onDelete }: Props) {
   const totalBirds = birds.filter(b => b.status !== 'dead' && b.status !== 'sold').length;
   const males = birds.filter(b => b.gender === 'male' && b.status !== 'dead' && b.status !== 'sold').length;
   const females = birds.filter(b => b.gender === 'female' && b.status !== 'dead' && b.status !== 'sold').length;

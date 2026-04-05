@@ -7,9 +7,10 @@ interface Props {
   pairs: Pair[];
   onUpdatePairs: (pairs: Pair[]) => void;
   onUpdateBirds: (birds: Bird[]) => void;
+  onDeletePair?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
-export default function PairsPage({ birds, pairs, onUpdatePairs, onUpdateBirds }: Props) {
+export default function PairsPage({ birds, pairs, onUpdatePairs, onUpdateBirds, onDeletePair }: Props) { // ✅ تم استقبال onDeletePair
   const [showForm, setShowForm] = useState(false);
   const [selectedMale, setSelectedMale] = useState('');
   const [selectedFemale, setSelectedFemale] = useState('');
@@ -66,8 +67,14 @@ export default function PairsPage({ birds, pairs, onUpdatePairs, onUpdateBirds }
     onUpdateBirds(updatedBirds);
   };
 
-  const deletePair = (pair: Pair) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الزوج؟')) return;
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deletePair = async (pair: Pair) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الزوج؟ سيتم حذفه نهائياً من السحابة.')) return;
+    
+    // 1. احذف من Supabase أولاً
+    if (onDeletePair) await onDeletePair(pair.id);
+    
+    // 2. حدّث الواجهة محلياً
     onUpdatePairs(pairs.filter(p => p.id !== pair.id));
     
     if (pair.status === 'active') {

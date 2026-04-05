@@ -4,9 +4,10 @@ import { formatDate } from '../store';
 interface Props {
   alerts: Alert[];
   onUpdate: (alerts: Alert[]) => void;
+  onDelete?: (id: string) => void; // ✅ تم الإضافة بدقة
 }
 
-export default function AlertsPage({ alerts, onUpdate }: Props) {
+export default function AlertsPage({ alerts, onUpdate, onDelete }: Props) { // ✅ تم استقبال onDelete
   const markAsRead = (id: string) => {
     onUpdate(alerts.map(a => a.id === id ? { ...a, read: true } : a));
   };
@@ -15,12 +16,21 @@ export default function AlertsPage({ alerts, onUpdate }: Props) {
     onUpdate(alerts.map(a => ({ ...a, read: true })));
   };
 
-  const deleteAlert = (id: string) => {
+  // ✅ تم تعديل دالة الحذف لتتزامن مع السحابة قبل تحديث الواجهة
+  const deleteAlert = async (id: string) => {
+    if (onDelete) await onDelete(id);
     onUpdate(alerts.filter(a => a.id !== id));
   };
 
-  const clearAll = () => {
-    if (confirm('هل أنت متأكد من حذف جميع التنبيهات؟')) {
+  // ✅ تم تعديل دالة الحذف الكل لتتزامن مع السحابة
+  const clearAll = async () => {
+    if (confirm('هل أنت متأكد من حذف جميع التنبيهات؟ سيتم حذفها نهائياً من السحابة.')) {
+      // حذف كل التنبيهات من السحابة واحدة بواحدة
+      if (onDelete) {
+        for (const alert of alerts) {
+          await onDelete(alert.id);
+        }
+      }
       onUpdate([]);
     }
   };
