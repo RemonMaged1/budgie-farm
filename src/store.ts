@@ -78,27 +78,34 @@ export async function loadAlerts(): Promise<Alert[]> {
 }
 
 // دوال الحفظ (بتحمّل كل البيانات وتعدّل الجزء المطلوب)
-export async function saveBirds( Bird[]): Promise<void> { 
+// ================= دوال الحفظ (تم إصلاح الخطأ) =================
+// ملاحظة: بنجيب كل البيانات، بنعدل الجزء المطلوب، ونعيد حفظ الكل
+export async function saveBirds(data: Bird[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, birds: data }); 
 }
-export async function savePairs( Pair[]): Promise<void> { 
+
+export async function savePairs(data: Pair[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, pairs: data }); 
 }
-export async function saveBreeding( BreedingRecord[]): Promise<void> { 
+
+export async function saveBreeding(data: BreedingRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, breeding: data }); 
 }
-export async function saveHealth( HealthRecord[]): Promise<void> { 
+
+export async function saveHealth(data: HealthRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, health: data }); 
 }
-export async function saveFinance( FinancialRecord[]): Promise<void> { 
+
+export async function saveFinance(data: FinancialRecord[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, finance: data }); 
 }
-export async function saveAlerts( Alert[]): Promise<void> { 
+
+export async function saveAlerts(data: Alert[]): Promise<void> { 
   const d = await fetchData(); 
   await saveData({ ...d, alerts: data }); 
 }
