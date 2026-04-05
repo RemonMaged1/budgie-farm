@@ -1,6 +1,6 @@
 import { Bird, Pair, BreedingRecord, HealthRecord, FinancialRecord, Alert } from './types';
-import { db } from './firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { db } from './firebase'; // تأكد إن الملف ده موجود ومفيش خطأ فيه
+import { collection, getDocs, doc, setDoc, query, orderBy } from 'firebase/firestore';
 
 const COLLECTIONS = {
   birds: 'birds',
@@ -11,14 +11,19 @@ const COLLECTIONS = {
   alerts: 'alerts',
 } as const;
 
-// دالة مساعدة لقراءة البيانات من Firestore
+// دالة لجلب البيانات من النت (أصبحت async)
 async function loadCollection<T>(colName: string): Promise<T[]> {
-  const q = query(collection(db, colName), orderBy('addedDate', 'desc')); // ترتيب اختياري
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as T));
+  try {
+    const q = query(collection(db, colName), orderBy('addedDate', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as T));
+  } catch (error) {
+    console.error(`Error loading ${colName}:`, error);
+    return [];
+  }
 }
 
-// دوال التحميل (أصبحت async)
+// دوال التحميل (بتستنى النت)
 export async function loadBirds(): Promise<Bird[]> { return loadCollection<Bird>(COLLECTIONS.birds); }
 export async function loadPairs(): Promise<Pair[]> { return loadCollection<Pair>(COLLECTIONS.pairs); }
 export async function loadBreeding(): Promise<BreedingRecord[]> { return loadCollection<BreedingRecord>(COLLECTIONS.breeding); }
@@ -26,21 +31,21 @@ export async function loadHealth(): Promise<HealthRecord[]> { return loadCollect
 export async function loadFinance(): Promise<FinancialRecord[]> { return loadCollection<FinancialRecord>(COLLECTIONS.finance); }
 export async function loadAlerts(): Promise<Alert[]> { return loadCollection<Alert>(COLLECTIONS.alerts); }
 
-// دوال الحفظ (تكتب كل عنصر كمستند منفصل في Firestore)
+// دوال الحفظ
 async function saveCollection<T extends { id: string }>(colName: string, data: T[]): Promise<void> {
   for (const item of data) {
     await setDoc(doc(db, colName, item.id), item, { merge: true });
   }
 }
 
-export async function saveBirds(data: Bird[]): Promise<void> { await saveCollection(COLLECTIONS.birds, data); }
-export async function savePairs(data: Pair[]): Promise<void> { await saveCollection(COLLECTIONS.pairs, data); }
-export async function saveBreeding(data: BreedingRecord[]): Promise<void> { await saveCollection(COLLECTIONS.breeding, data); }
-export async function saveHealth(data: HealthRecord[]): Promise<void> { await saveCollection(COLLECTIONS.health, data); }
-export async function saveFinance(data: FinancialRecord[]): Promise<void> { await saveCollection(COLLECTIONS.finance, data); }
-export async function saveAlerts(data: Alert[]): Promise<void> { await saveCollection(COLLECTIONS.alerts, data); }
+export async function saveBirds( Bird[]): Promise<void> { await saveCollection(COLLECTIONS.birds, data); }
+export async function savePairs( Pair[]): Promise<void> { await saveCollection(COLLECTIONS.pairs, data); }
+export async function saveBreeding( BreedingRecord[]): Promise<void> { await saveCollection(COLLECTIONS.breeding, data); }
+export async function saveHealth( HealthRecord[]): Promise<void> { await saveCollection(COLLECTIONS.health, data); }
+export async function saveFinance( FinancialRecord[]): Promise<void> { await saveCollection(COLLECTIONS.finance, data); }
+export async function saveAlerts( Alert[]): Promise<void> { await saveCollection(COLLECTIONS.alerts, data); }
 
-// الدوال المساعدة الأخرى تبقى كما هي (لا تحتاج تعديل)
+// باقي الدوال المساعدة (نفسها زي ما هي)
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }

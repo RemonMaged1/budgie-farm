@@ -28,6 +28,8 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true); // حالة تحميل البيانات
+  
   const [birds, setBirds] = useState<Bird[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [breeding, setBreeding] = useState<BreedingRecord[]>([]);
@@ -35,142 +37,134 @@ function App() {
   const [finance, setFinance] = useState<FinancialRecord[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
-// Load data on mount
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      // نستخدم await لأن التحميل أصبح من النت ويأخذ وقت
-      const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
-        loadBirds(),
-        loadPairs(),
-        loadBreeding(),
-        loadHealth(),
-        loadFinance(),
-        loadAlerts(),
-      ]);
+  // Load data on mount (Async)
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // ننتظر تحميل كل البيانات من Firestore معاً
+        const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
+          loadBirds(),
+          loadPairs(),
+          loadBreeding(),
+          loadHealth(),
+          loadFinance(),
+          loadAlerts(),
+        ]);
 
-      setBirds(loadedBirds);
-      setPairs(loadedPairs);
-      setBreeding(loadedBreeding);
-      setHealth(loadedHealth);
-      setFinance(loadedFinance);
-      setAlerts(loadedAlerts);
-    } catch (error) {
-      console.error("فشل تحميل البيانات من Firebase:", error);
-    }
-  };
+        setBirds(loadedBirds);
+        setPairs(loadedPairs);
+        setBreeding(loadedBreeding);
+        setHealth(loadedHealth);
+        setFinance(loadedFinance);
+        setAlerts(loadedAlerts);
+      } catch (error) {
+        console.error("فشل تحميل البيانات من Firestore:", error);
+      } finally {
+        setLoading(false); // إخفاء اللودينج بعد الانتهاء
+      }
+    };
+    loadData();
+  }, []);
 
-  loadData();
-}, []);
+  // Save handlers (Async)
+  const updateBirds = useCallback(async (data: Bird[]) => {
+    setBirds(data);
+    await saveBirds(data);
+  }, []);
 
-  // Save handlers
-// Save handlers
-const updateBirds = useCallback(async (data: Bird[]) => {
-  setBirds(data);
-  await saveBirds(data); // ننتظر حتى ينتهي الحفظ في النت
-}, []);
+  const updatePairs = useCallback(async (data: Pair[]) => {
+    setPairs(data);
+    await savePairs(data);
+  }, []);
 
-const updatePairs = useCallback(async (data: Pair[]) => {
-  setPairs(data);
-  await savePairs(data);
-}, []);
+  const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
+    setBreeding(data);
+    await saveBreeding(data);
+  }, []);
 
-const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
-  setBreeding(data);
-  await saveBreeding(data);
-}, []);
+  const updateHealth = useCallback(async (data: HealthRecord[]) => {
+    setHealth(data);
+    await saveHealth(data);
+  }, []);
 
-const updateHealth = useCallback(async (data: HealthRecord[]) => {
-  setHealth(data);
-  await saveHealth(data);
-}, []);
+  const updateFinance = useCallback(async (data: FinancialRecord[]) => {
+    setFinance(data);
+    await saveFinance(data);
+  }, []);
 
-const updateFinance = useCallback(async (data: FinancialRecord[]) => {
-  setFinance(data);
-  await saveFinance(data);
-}, []);
-
-const updateAlerts = useCallback(async (data: Alert[]) => {
-  setAlerts(data);
-  await saveAlerts(data);
-}, []);;
+  const updateAlerts = useCallback(async (data: Alert[]) => {
+    setAlerts(data);
+    await saveAlerts(data);
+  }, []);
 
   // Generate automatic alerts
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const newAlerts: Alert[] = [];
+    const generateAlerts = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const newAlerts: Alert[] = [];
 
-    breeding.forEach(record => {
-      if (record.status === 'eggs') {
-        const daysToHatch = Math.ceil(
-          (new Date(record.expectedHatchDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        );
-        const pair = pairs.find(p => p.id === record.pairId);
-        const male = pair ? birds.find(b => b.id === pair.maleId) : null;
-        const female = pair ? birds.find(b => b.id === pair.femaleId) : null;
-        const pairName = `${male?.name || '?'} × ${female?.name || '?'}`;
-
-        if (daysToHatch <= 3 && daysToHatch >= 0) {
-          const existingAlert = alerts.find(a => a.relatedId === record.id && a.type === 'hatch');
-          if (!existingAlert) {
-            newAlerts.push({
-              id: generateId(),
-              type: 'hatch',
-              message: `🐣 موعد الفقس قريب! ${pairName} - بعد ${daysToHatch} يوم`,
-              date: today,
-              relatedId: record.id,
-              read: false,
-              priority: daysToHatch === 0 ? 'critical' : 'high',
-            });
+      breeding.forEach(record => {
+        if (record.status === 'eggs') {
+          const daysToHatch = Math.ceil(
+            (new Date(record.expectedHatchDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          );
+          const pair = pairs.find(p => p.id === record.pairId);
+          const male = pair ? birds.find(b => b.id === pair.maleId) : null;
+          const female = pair ? birds.find(b => b.id === pair.femaleId) : null;
+          const pairName = `${male?.name || '?'} × ${female?.name || '?'}`;
+          
+          if (daysToHatch <= 3 && daysToHatch >= 0) {
+            const existingAlert = alerts.find(a => a.relatedId === record.id && a.type === 'hatch');
+            if (!existingAlert) {
+              newAlerts.push({
+                id: generateId(), type: 'hatch',
+                message: `🐣 موعد الفقس قريب! ${pairName} - بعد ${daysToHatch} يوم`,
+                date: today, relatedId: record.id, read: false,
+                priority: daysToHatch === 0 ? 'critical' : 'high',
+              });
+            }
+          }
+          if (daysToHatch < 0) {
+            const existingAlert = alerts.find(a => a.relatedId === record.id + '_overdue' && a.type === 'hatch');
+            if (!existingAlert) {
+              newAlerts.push({
+                id: generateId(), type: 'hatch',
+                message: `⚠️ تجاوز موعد الفقس! ${pairName} - كان المفروض ${Math.abs(daysToHatch)} يوم`,
+                date: today, relatedId: record.id + '_overdue', read: false, priority: 'critical',
+              });
+            }
           }
         }
-        if (daysToHatch < 0) {
-          const existingAlert = alerts.find(a => a.relatedId === record.id + '_overdue' && a.type === 'hatch');
-          if (!existingAlert) {
-            newAlerts.push({
-              id: generateId(),
-              type: 'hatch',
-              message: `⚠️ تجاوز موعد الفقس! ${pairName} - كان المفروض ${Math.abs(daysToHatch)} يوم`,
-              date: today,
-              relatedId: record.id + '_overdue',
-              read: false,
-              priority: 'critical',
-            });
+        if (record.status === 'feeding' && record.expectedWeanDate) {
+          const daysToWean = Math.ceil(
+            (new Date(record.expectedWeanDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          );
+          const pair = pairs.find(p => p.id === record.pairId);
+          const male = pair ? birds.find(b => b.id === pair.maleId) : null;
+          const female = pair ? birds.find(b => b.id === pair.femaleId) : null;
+          const pairName = `${male?.name || '?'} × ${female?.name || '?'}`;
+          
+          if (daysToWean <= 5 && daysToWean >= 0) {
+            const existingAlert = alerts.find(a => a.relatedId === record.id + '_wean' && a.type === 'wean');
+            if (!existingAlert) {
+              newAlerts.push({
+                id: generateId(), type: 'wean',
+                message: `🐦 موعد الفطام قريب! ${pairName} - بعد ${daysToWean} يوم`,
+                date: today, relatedId: record.id + '_wean', read: false,
+                priority: daysToWean <= 2 ? 'high' : 'medium',
+              });
+            }
           }
         }
+      });
+
+      if (newAlerts.length > 0) {
+        const updated = [...alerts, ...newAlerts];
+        setAlerts(updated);
+        await saveAlerts(updated);
       }
-
-      if (record.status === 'feeding' && record.expectedWeanDate) {
-        const daysToWean = Math.ceil(
-          (new Date(record.expectedWeanDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        );
-        const pair = pairs.find(p => p.id === record.pairId);
-        const male = pair ? birds.find(b => b.id === pair.maleId) : null;
-        const female = pair ? birds.find(b => b.id === pair.femaleId) : null;
-        const pairName = `${male?.name || '?'} × ${female?.name || '?'}`;
-
-        if (daysToWean <= 5 && daysToWean >= 0) {
-          const existingAlert = alerts.find(a => a.relatedId === record.id + '_wean' && a.type === 'wean');
-          if (!existingAlert) {
-            newAlerts.push({
-              id: generateId(),
-              type: 'wean',
-              message: `🐦 موعد الفطام قريب! ${pairName} - بعد ${daysToWean} يوم`,
-              date: today,
-              relatedId: record.id + '_wean',
-              read: false,
-              priority: daysToWean <= 2 ? 'high' : 'medium',
-            });
-          }
-        }
-      }
-    });
-
-    if (newAlerts.length > 0) {
-      const updated = [...alerts, ...newAlerts];
-      setAlerts(updated);
-      saveAlerts(updated);
-    }
+    };
+    generateAlerts();
   }, [breeding, pairs, birds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigate = (page: string) => {
@@ -203,13 +197,24 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <span className="text-5xl animate-bounce block">🐦</span>
+          <p className="text-slate-400 text-lg">جاري تحميل بيانات المزرعة...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-900 flex">
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
-
+      
       {/* Sidebar */}
       <aside
         className={`fixed lg:sticky top-0 right-0 h-screen w-64 bg-slate-800/90 backdrop-blur-xl border-l border-slate-700/50 z-50 transition-transform duration-300 flex flex-col overflow-y-auto ${
@@ -228,7 +233,7 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
             </div>
           </div>
         </div>
-
+        
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1">
           {NAV_ITEMS.map(item => (
@@ -251,7 +256,7 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
             </button>
           ))}
         </nav>
-
+        
         {/* Stats Footer */}
         <div className="p-4 border-t border-slate-700/50">
           <div className="bg-slate-700/30 rounded-xl p-3 space-y-2">
@@ -284,7 +289,6 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-
             <div className="flex items-center gap-3 mr-auto">
               {/* Data export/import */}
               <button
@@ -308,7 +312,6 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
                 <span>📥</span>
                 <span className="hidden sm:inline">تصدير</span>
               </button>
-
               <label className="text-slate-400 hover:text-white transition-colors p-2 text-sm flex items-center gap-1 cursor-pointer" title="استيراد البيانات">
                 <span>📤</span>
                 <span className="hidden sm:inline">استيراد</span>
@@ -323,12 +326,12 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
                     reader.onload = (ev) => {
                       try {
                         const data = JSON.parse(ev.target?.result as string);
-                        if (data.birds) { updateBirds(data.birds); }
-                        if (data.pairs) { updatePairs(data.pairs); }
-                        if (data.breeding) { updateBreeding(data.breeding); }
-                        if (data.health) { updateHealth(data.health); }
-                        if (data.finance) { updateFinance(data.finance); }
-                        if (data.alerts) { updateAlerts(data.alerts); }
+                        if (data.birds) updateBirds(data.birds);
+                        if (data.pairs) updatePairs(data.pairs);
+                        if (data.breeding) updateBreeding(data.breeding);
+                        if (data.health) updateHealth(data.health);
+                        if (data.finance) updateFinance(data.finance);
+                        if (data.alerts) updateAlerts(data.alerts);
                         alert('تم استيراد البيانات بنجاح! ✅');
                       } catch {
                         alert('خطأ في قراءة الملف! ❌');
@@ -339,7 +342,6 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
                   }}
                 />
               </label>
-
               {unreadAlerts > 0 && (
                 <button
                   onClick={() => navigate('alerts')}
@@ -354,7 +356,7 @@ const updateAlerts = useCallback(async (data: Alert[]) => {
             </div>
           </div>
         </header>
-
+        
         {/* Page Content */}
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
           {renderPage()}
