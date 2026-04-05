@@ -16,12 +16,13 @@ interface FarmData {
 }
 
 // دالة لجلب البيانات من النت
-async function fetchData(): Promise<AllData> {
+// دالة لجلب البيانات من النت
+async function fetchData(): Promise<FarmData> {  // ← تم التصحيح هنا
   try {
     const res = await fetch(BASE_URL, {
       method: 'GET',
       headers: { 
-        'X-Access-Key': API_KEY,  // ⚠️ ده الاسم الصح للهيدر
+        'X-Access-Key': API_KEY,
         'X-Bin-Meta': 'false',
         'Accept': 'application/json'
       },
@@ -41,18 +42,6 @@ async function fetchData(): Promise<AllData> {
     console.error('❌ فشل جلب البيانات:', error);
     return { birds: [], pairs: [], breeding: [], health: [], finance: [], alerts: [] };
   }
-}
-
-// دالة لحفظ البيانات على النت
-async function saveData( data: FarmData): Promise<void> {
-  await fetch(BASE_URL, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Access-Key': API_KEY
-    },
-    body: JSON.stringify(data)
-  });
 }
 
 // دوال التحميل (كلها بتجيب من نفس المصدر)
