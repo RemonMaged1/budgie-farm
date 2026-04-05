@@ -231,7 +231,7 @@ function App() {
       case 'family':
         return <FamilyTree birds={birds} />;
       case 'genetics':
-        return <GeneticsCalculator />;  
+        return <GeneticsCalculator birds={birds} />;
       case 'health':
         return <HealthPage birds={birds} health={health} onUpdate={updateHealth} onDelete={handleDeleteHealth} />;
       case 'finance':
