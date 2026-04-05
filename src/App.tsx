@@ -38,65 +38,52 @@ function App() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   // Load data on mount (Async)
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // ننتظر تحميل كل البيانات من Firestore معاً
-        const [loadedBirds, loadedPairs, loadedBreeding, loadedHealth, loadedFinance, loadedAlerts] = await Promise.all([
-          loadBirds(),
-          loadPairs(),
-          loadBreeding(),
-          loadHealth(),
-          loadFinance(),
-          loadAlerts(),
-        ]);
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const [b, p, br, h, f, a] = await Promise.all([
+        loadBirds(), loadPairs(), loadBreeding(), 
+        loadHealth(), loadFinance(), loadAlerts()
+      ]);
+      setBirds(b); setPairs(p); setBreeding(br);
+      setHealth(h); setFinance(f); setAlerts(a);
+    } catch (error) {
+      console.error("فشل تحميل البيانات:", error);
+    }
+  };
+  loadData();
+}, []);
 
-        setBirds(loadedBirds);
-        setPairs(loadedPairs);
-        setBreeding(loadedBreeding);
-        setHealth(loadedHealth);
-        setFinance(loadedFinance);
-        setAlerts(loadedAlerts);
-      } catch (error) {
-        console.error("فشل تحميل البيانات من Firestore:", error);
-      } finally {
-        setLoading(false); // إخفاء اللودينج بعد الانتهاء
-      }
-    };
-    loadData();
-  }, []);
+// Save handlers (Async)
+const updateBirds = useCallback(async ( Bird[]) => {
+  setBirds(data);
+  await saveBirds(data);
+}, []);
 
-  // Save handlers (Async)
-  const updateBirds = useCallback(async (data: Bird[]) => {
-    setBirds(data);
-    await saveBirds(data);
-  }, []);
+const updatePairs = useCallback(async ( Pair[]) => {
+  setPairs(data);
+  await savePairs(data);
+}, []);
 
-  const updatePairs = useCallback(async (data: Pair[]) => {
-    setPairs(data);
-    await savePairs(data);
-  }, []);
+const updateBreeding = useCallback(async ( BreedingRecord[]) => {
+  setBreeding(data);
+  await saveBreeding(data);
+}, []);
 
-  const updateBreeding = useCallback(async (data: BreedingRecord[]) => {
-    setBreeding(data);
-    await saveBreeding(data);
-  }, []);
+const updateHealth = useCallback(async ( HealthRecord[]) => {
+  setHealth(data);
+  await saveHealth(data);
+}, []);
 
-  const updateHealth = useCallback(async (data: HealthRecord[]) => {
-    setHealth(data);
-    await saveHealth(data);
-  }, []);
+const updateFinance = useCallback(async ( FinancialRecord[]) => {
+  setFinance(data);
+  await saveFinance(data);
+}, []);
 
-  const updateFinance = useCallback(async (data: FinancialRecord[]) => {
-    setFinance(data);
-    await saveFinance(data);
-  }, []);
-
-  const updateAlerts = useCallback(async (data: Alert[]) => {
-    setAlerts(data);
-    await saveAlerts(data);
-  }, []);
-
+const updateAlerts = useCallback(async ( Alert[]) => {
+  setAlerts(data);
+  await saveAlerts(data);
+}, []);
   // Generate automatic alerts
   useEffect(() => {
     const generateAlerts = async () => {
