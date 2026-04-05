@@ -19,6 +19,7 @@ import HealthPage from './components/HealthPage';
 import FinancePage from './components/FinancePage';
 import BreedingCalendar from './components/BreedingCalendar';
 import AlertsPage from './components/AlertsPage';
+import GeneticsCalculator from './components/GeneticsCalculator';
 
 const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
   { page: 'dashboard', icon: '📊', label: 'لوحة التحكم' },
@@ -26,10 +27,12 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
   { page: 'pairs', icon: '💕', label: 'الأزواج' },
   { page: 'breeding', icon: '🥚', label: 'التفريخ' },
   { page: 'family', icon: '🌳', label: 'شجرة العائلة' },
+  { page: 'genetics', icon: '🧬', label: 'حاسبة الوراثة' },
   { page: 'health', icon: '🏥', label: 'السجل الصحي' },
   { page: 'finance', icon: '💰', label: 'المالية' },
   { page: 'alerts', icon: '🔔', label: 'التنبيهات' },
   { page: 'calendar', icon: '📅', label: 'التقويم' },
+
 ];
 
 function App() {
@@ -227,6 +230,8 @@ function App() {
         return <BreedingPage birds={birds} pairs={pairs} breeding={breeding} onUpdate={updateBreeding} onDelete={handleDeleteBreeding} />;
       case 'family':
         return <FamilyTree birds={birds} />;
+      case 'genetics':
+        return <GeneticsCalculator />;  
       case 'health':
         return <HealthPage birds={birds} health={health} onUpdate={updateHealth} onDelete={handleDeleteHealth} />;
       case 'finance':
